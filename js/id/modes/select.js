@@ -6,6 +6,7 @@ iD.modes.Select = function(context, selection, initial) {
 
     var inspector = iD.ui.inspector().initial(!!initial),
         keybinding = d3.keybinding('select'),
+        radialTime = null,
         behaviors = [
             iD.behavior.Hover(),
             iD.behavior.Select(context),
@@ -169,7 +170,15 @@ iD.modes.Select = function(context, selection, initial) {
                 loc = entity.loc;
             }
 
-            context.surface().call(radialMenu, context.projection(loc));
+            context.surface().on('click.cancel-radial', function() {
+                window.clearTimeout(radialTime);
+                context.surface().on('click.cancel-radial', null);
+            });
+
+            radialTime = window.setTimeout(function() {
+                context.surface().call(radialMenu, context.projection(loc));
+                context.surface().on('click.cancel-radial', null);
+            }, 300);
         }
     };
 
@@ -177,6 +186,8 @@ iD.modes.Select = function(context, selection, initial) {
         if (singular()) {
             changeTags(singular(), inspector.tags());
         }
+
+        if (radialTime) window.clearTimeout(radialTime);
 
         context.container()
             .select('.inspector-wrap')
